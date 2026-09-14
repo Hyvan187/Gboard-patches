@@ -1,4 +1,4 @@
-name: Release from tag
+name: Release
 
 on:
   workflow_dispatch:
@@ -13,11 +13,63 @@ jobs:
       contents: write
       packages: read
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Resolve and validate release metadata
+        id: metadata
+        shell: pwsh
+        env:
+          REPO_SLUG: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          $gradleText = Get-Content -LiteralPath "gradle.properties" -Raw
+          $match = [regex]::Match($gradleText, '(?m)^\s*version\s*=\s*([^\r\n#]+?)\s*$')
+          if (-not $match.Success) {
+              throw "Unable to resolve version from gradle.properties."
+          }
+
+          $version = $match.Groups[1].Value.Trim()
+          if ([string]::IsNullOrWhiteSpace($version)) {
+              throw "Version in gradle.properties is empty."
+          }
+
+          $tag = "v$version"
+
+          if ($env:EVENT_NAME -eq "push") {
+              if (-not $env:REF_NAME.StartsWith("v")) {
+                  throw "Release tag must start with 'v'."
+              }
+              if ($env:REF_NAME -ne $tag) {
+                  throw "Tag '$($env:REF_NAME)' does not match gradle.properties version '$version' (expected '$tag')."
+              }
+          }
+
+          $bundle = Get-Content -LiteralPath "patches-bundle.json" -Raw | ConvertFrom-Json
+          if ([string]$bundle.version -ne $version) {
+              throw "patches-bundle.json version '$($bundle.version)' does not match '$version'."
+          }
+
+          $expectedDownloadUrl = "https://github.com/$($env:REPO_SLUG)/releases/download/$tag/patches-$version.mpp"
+          if ([string]$bundle.download_url -ne $expectedDownloadUrl) {
+              throw "patches-bundle.json download_url does not match expected public release URL '$expectedDownloadUrl'."
+          }
+
+          if (-not [string]::IsNullOrEmpty([string]$bundle.signature_download_url)) {
+              throw "patches-bundle.json signature_download_url must be empty for the public repo."
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "prerelease=$($tag.Contains('-dev.').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Release version: $version"
+          Write-Host "Release tag: $tag"
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -31,66 +83,51 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      - name: Validate Morphe Packages token
+        shell: bash
+        env:
+          MORPHE_PACKAGES_TOKEN: ${{ secrets.MORPHE_PACKAGES_TOKEN }}
+        run: |
+          if [ -z "$MORPHE_PACKAGES_TOKEN" ]; then
+            echo "::error::Repository secret MORPHE_PACKAGES_TOKEN is missing or empty. Create a GitHub token with read:packages access to MorpheApp/registry and save it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
       - name: Build
         env:
           GITHUB_ACTOR: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.MORPHE_PACKAGES_TOKEN }}
         run: ./gradlew :patches:buildAndroid generatePatchesList
 
-      - name: Validate synced release metadata
-        id: metadata
+      - name: Verify release artifact
         shell: pwsh
         env:
-          REPO_SLUG: ${{ github.repository }}
+          VERSION: ${{ steps.metadata.outputs.version }}
         run: |
-          $tag = $env:GITHUB_REF_NAME
-          if (-not $tag.StartsWith("v")) {
-              throw "Release tag must start with 'v'."
+          $artifact = "patches/build/libs/patches-$env:VERSION.mpp"
+          if (-not (Test-Path -LiteralPath $artifact)) {
+              throw "Expected release artifact '$artifact' was not generated."
           }
-
-          $expectedVersion = $tag.Substring(1)
-          $gradleText = Get-Content -LiteralPath "gradle.properties" -Raw
-          $match = [regex]::Match($gradleText, '(?m)^\s*version\s*=\s*([^\r\n#]+?)\s*$')
-          if (-not $match.Success) {
-              throw "Unable to resolve version from gradle.properties."
-          }
-
-          $actualVersion = $match.Groups[1].Value.Trim()
-          if ($actualVersion -ne $expectedVersion) {
-              throw "Tag version '$expectedVersion' does not match gradle.properties version '$actualVersion'."
-          }
-
-          $bundle = Get-Content -LiteralPath "patches-bundle.json" -Raw | ConvertFrom-Json
-          if ([string]$bundle.version -ne $actualVersion) {
-              throw "patches-bundle.json version '$($bundle.version)' does not match '$actualVersion'."
-          }
-
-          $expectedDownloadUrl = "https://github.com/$($env:REPO_SLUG)/releases/download/$tag/patches-$actualVersion.mpp"
-
-          if ([string]$bundle.download_url -ne $expectedDownloadUrl) {
-              throw "patches-bundle.json download_url does not match expected public release URL."
-          }
-          if (-not [string]::IsNullOrEmpty([string]$bundle.signature_download_url)) {
-              throw "patches-bundle.json signature_download_url must be empty for the public repo."
-          }
-
-          "version=$actualVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "Release artifact found: $artifact"
 
       - name: Prepare release notes
         shell: pwsh
+        env:
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
         run: |
           $bundle = Get-Content -LiteralPath "patches-bundle.json" -Raw | ConvertFrom-Json
           $notes = [string]$bundle.description
           if ([string]::IsNullOrWhiteSpace($notes)) {
-              $notes = "Public mirror release for $env:GITHUB_REF_NAME."
+              $notes = "Public mirror release for $env:RELEASE_TAG."
           }
           Set-Content -LiteralPath "release-notes.md" -Value $notes -Encoding utf8
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ steps.metadata.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           body_path: release-notes.md
-          prerelease: ${{ contains(github.ref_name, '-dev.') }}
+          prerelease: ${{ steps.metadata.outputs.prerelease }}
           files: |
             patches/build/libs/patches-${{ steps.metadata.outputs.version }}.mpp
