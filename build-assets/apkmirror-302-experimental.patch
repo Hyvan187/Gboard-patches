@@ -1,0 +1,80 @@
+diff --git a/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/Fingerprints.kt b/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/Fingerprints.kt
+--- a/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/Fingerprints.kt
++++ b/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/Fingerprints.kt
+@@ -43,3 +43,15 @@
+     returnType = "V",
+     parameters = listOf("Landroid/content/Context;"),
+ )
++
++// APKMirror Installer 3.0.2 beta (Build 44): billing state resolver.
++// IMPORTANT: These obfuscated class names must not be reused for other app versions.
++internal val PremiumStatusV302Fingerprint = Fingerprint(
++    definingClass = "Loy4;",
++    name = "c",
++    returnType = "Lxx4;",
++    parameters = listOf(
++        "Ljava/util/List;",
++        "Ljava/util/List;",
++    ),
++)
+diff --git a/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt b/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt
+--- a/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt
++++ b/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt
+@@ -6,2 +6,3 @@
+ import app.template.patches.shared.Constants.APKMIRROR_INSTALLER_COMPATIBILITY
++import app.template.patches.shared.Constants.APKMIRROR_INSTALLER_V302_COMPATIBILITY
+ import app.template.patches.shared.clearBody
+@@ -104,3 +105,35 @@
+         }
+     }
+ }
++
++/**
++ * EXPERIMENTAL: separate patch for the rewritten APKMirror Installer 3.0.2 (44).
++ * This targets the new premium state resolver rather than the removed 2.0.3
++ * InstallerActivity / old ads SDK entry points.
++ *
++ * Static fingerprint verification only. Runtime ad removal and TV support
++ * have not been tested and are NOT guaranteed by this change.
++ */
++@Suppress("unused")
++val unlockUltimateV302Patch = bytecodePatch(
++    name = "Unlock Ultimate (3.0.2 beta)",
++    description = "Experimental compatibility with APKMirror Installer 3.0.2 beta; untested on-device.",
++    default = false,
++) {
++    compatibleWith(APKMIRROR_INSTALLER_V302_COMPATIBILITY)
++
++    execute {
++        PremiumStatusV302Fingerprint.method.apply {
++            clearBody()
++            addInstructions(
++                0,
++                """
++                    new-instance v0, Lwx4;
++                    const-string v1, "yearly_3"
++                    invoke-direct {v0, v1}, Lwx4;-><init>(Ljava/lang/String;)V
++                    return-object v0
++                """.trimIndent(),
++            )
++        }
++    }
++}
+diff --git a/patches/src/main/kotlin/app/template/patches/shared/Constants.kt b/patches/src/main/kotlin/app/template/patches/shared/Constants.kt
+--- a/patches/src/main/kotlin/app/template/patches/shared/Constants.kt
++++ b/patches/src/main/kotlin/app/template/patches/shared/Constants.kt
+@@ -162,4 +162,14 @@
+         targets = listOf(AppTarget(version = "2.0.3 (41-d04e542)", versionCode = 41))
+     )
+ 
++val APKMIRROR_INSTALLER_V302_COMPATIBILITY = Compatibility(
++        name = "APKMirror Installer",
++        packageName = "com.apkmirror.helper.prod",
++        apkFileType = ApkFileType.APK,
++        appIconColor = 0xFF9800,
++        targets = listOf(
++            AppTarget(version = "3.0.2 (44-17ea75d)", versionCode = 44)
++        )
++    )
++
+ val APPLOCKWATCHER_COMPATIBILITY = Compatibility(
