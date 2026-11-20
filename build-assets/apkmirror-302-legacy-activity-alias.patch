@@ -1,0 +1,47 @@
+diff --git a/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt b/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt
+--- a/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt
++++ b/patches/src/main/kotlin/app/template/patches/apkmirrorinstaller/RemoveAdsPatch.kt
+@@ -107,6 +107,35 @@
+ }
+ 
+ /**
++ * APKMirror Installer 3.0.2 no longer declares the old 2.0.3
++ * com.apkmirror.presentation.installer.InstallerActivity component.
++ * An external client that explicitly starts that obsolete component
++ * will fail with ActivityNotFoundException even after installation.
++ * Register a compatibility alias to the current, exported launcher.
++ */
++private val legacyInstallerActivityAliasV302Patch = resourcePatch {
++    execute {
++        document("AndroidManifest.xml").use { document ->
++            val application = document.getElementsByTagName("application").item(0) as Element
++            val androidNs = "http://schemas.android.com/apk/res/android"
++            val aliasName = "com.apkmirror.presentation.installer.InstallerActivity"
++            val aliases = document.getElementsByTagName("activity-alias")
++            val exists = (0 until aliases.length).any {
++                (aliases.item(it) as Element).getAttributeNS(androidNs, "name") == aliasName
++            }
++            if (!exists) {
++                val alias = document.createElement("activity-alias")
++                alias.setAttributeNS(androidNs, "android:name", aliasName)
++                alias.setAttributeNS(androidNs, "android:targetActivity", "com.apkmirror.presentation.MainActivity")
++                alias.setAttributeNS(androidNs, "android:enabled", "true")
++                alias.setAttributeNS(androidNs, "android:exported", "true")
++                application.appendChild(alias)
++            }
++        }
++    }
++}
++
++/**
+  * EXPERIMENTAL: separate patch for the rewritten APKMirror Installer 3.0.2 (44).
+  * This targets the new premium state resolver rather than the removed 2.0.3
+  * InstallerActivity / old ads SDK entry points.
+@@ -121,6 +150,7 @@
+     default = false,
+ ) {
+     compatibleWith(APKMIRROR_INSTALLER_V302_COMPATIBILITY)
++    dependsOn(legacyInstallerActivityAliasV302Patch)
+ 
+     execute {
+         PremiumStatusV302Fingerprint.method.apply {
