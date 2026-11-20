@@ -25,6 +25,12 @@ jobs:
           git checkout --detach 1df254204b2ce5c1ac1c6ac73ee94c5ed5defb44
           sed -i '/gradlePluginPortal()/a\        mavenCentral()' settings.gradle.kts
           python3 ../build-assets/samsung-email-62165-port.py
+          {
+            echo "org.gradle.parallel=false"
+            echo "org.gradle.workers.max=2"
+            echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m -XX:+UseG1GC -Dfile.encoding=UTF-8"
+            echo "kotlin.compiler.execution.strategy=in-process"
+          } >> gradle.properties
           git diff --check
           git diff --stat
           grep -q '6.2.16.5' patches/src/main/kotlin/org/ungoogled/patches/samsungemail/SamsungEmailConstants.kt
@@ -49,7 +55,7 @@ jobs:
           test -n "$GITHUB_TOKEN" || { echo "::error::Missing MORPHE_PACKAGES_TOKEN"; exit 1; }
           cd upstream
           chmod +x ./gradlew
-          ./gradlew :patches:buildAndroid --no-daemon --stacktrace
+          ./gradlew :patches:buildAndroid --no-daemon --max-workers=2 --stacktrace
 
       - name: Verify generated Morphe patch archive
         shell: bash
