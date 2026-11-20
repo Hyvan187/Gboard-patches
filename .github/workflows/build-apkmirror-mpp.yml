@@ -23,6 +23,7 @@ jobs:
           git clone https://github.com/rushiranpise/morphe-patches.git doom-src
           cd doom-src
           git checkout --detach 13b8a3d714ab048101da69a358f42ac7932c34e9
+          sed -i '/gradlePluginPortal()/a\\        mavenCentral()' settings.gradle.kts
 
       - name: Apply and verify experimental patch
         run: |
