@@ -29,6 +29,8 @@ jobs:
           cd doom-src
           git apply --check ../build-assets/apkmirror-302-experimental.patch
           git apply ../build-assets/apkmirror-302-experimental.patch
+          git apply --check ../build-assets/apkmirror-302-legacy-activity-alias.patch
+          git apply ../build-assets/apkmirror-302-legacy-activity-alias.patch
           git diff --check
           git diff --stat
 
