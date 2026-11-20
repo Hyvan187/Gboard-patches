@@ -76,9 +76,9 @@ assert cosmetic.exists()
 (patchdir / "CosmeticUnlimitedV302.kt").write_text(cosmetic.read_text())
 
 source = main.read_text()
-needle = "    dependsOn(apkMirrorBlockPlayStoreUpdatesV302Patch)\\n"
+needle = "    dependsOn(apkMirrorBlockPlayStoreUpdatesV302Patch)\n"
 assert source.count(needle) == 1, "Missing v4 dependencies"
-source = source.replace(needle, needle + "    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\\n")
+source = source.replace(needle, needle + "    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\n")
 main.write_text(source)
 
 
