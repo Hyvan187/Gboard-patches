@@ -1,0 +1,68 @@
+name: Build APKMirror 3.0.2 Morphe MPP (experimental)
+
+on:
+  push:
+    branches:
+      - build-apkmirror-installer-302-mpp
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-mpp:
+    name: Compile isolated Morphe patch bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+
+      - name: Fetch pinned upstream source
+        run: |
+          git clone https://github.com/rushiranpise/morphe-patches.git doom-src
+          cd doom-src
+          git checkout --detach 13b8a3d714ab048101da69a358f42ac7932c34e9
+
+      - name: Apply and verify experimental patch
+        run: |
+          cd doom-src
+          git apply --check ../build-assets/apkmirror-302-experimental.patch
+          git apply ../build-assets/apkmirror-302-experimental.patch
+          git diff --check
+          git diff --stat
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Configure Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile Morphe .mpp bundle
+        env:
+          GITHUB_ACTOR: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.MORPHE_PACKAGES_TOKEN }}
+        run: |
+          test -n "$GITHUB_TOKEN" || { echo "::error::MORPHE_PACKAGES_TOKEN secret not configured"; exit 1; }
+          cd doom-src
+          chmod +x ./gradlew
+          ./gradlew :patches:buildAndroid --no-daemon
+
+      - name: Check build output
+        shell: bash
+        run: |
+          set -euo pipefail
+          find doom-src/patches/build/libs -maxdepth 1 -type f -name '*.mpp' -print
+          test -n "$(find doom-src/patches/build/libs -maxdepth 1 -type f -name '*.mpp' -print -quit)"
+          for f in doom-src/patches/build/libs/*.mpp; do unzip -t "$f" | tail -3; done
+
+      - name: Upload compiled patch bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: apkmirror-302-morphe-mpp-experimental
+          path: doom-src/patches/build/libs/*.mpp
+          if-no-files-found: error
+          retention-days: 7
