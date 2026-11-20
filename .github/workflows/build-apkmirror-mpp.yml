@@ -33,6 +33,7 @@ jobs:
           git apply ../build-assets/apkmirror-302-legacy-activity-alias.patch
           git apply --check ../build-assets/apkmirror-302-signature-status-v3.patch
           git apply ../build-assets/apkmirror-302-signature-status-v3.patch
+          python3 ../build-assets/finalize-apkmirror-302-v4.py
           git diff --check
           git diff --stat
 
