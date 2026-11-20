@@ -60,11 +60,11 @@ assert "APKMIRROR_INSTALLER_COMPATIBILITY" not in c
 b = metadata.read_text()
 old_name = 'name = "Doom\'s Morphe Patches"'
 assert b.count(old_name) == 1
-b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v6"')
+b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v7"')
 old_desc = 'description = "New mask, same task. All patches answer to Doom."'
 assert b.count(old_desc) == 1
 b = b.replace(old_desc,
-    'description = "Experimental APKMirror Installer 3.0.2: Ultimate, install-source spoof, update blocking, localized cosmetic Unlimited."')
+    'description = "Experimental APKMirror Installer 3.0.2: Ultimate, install-source spoof, update blocking, localized cosmetic Unlimited, ad SDK cleanup and advertising cookie prevention."')
 metadata.write_text(b)
 
 helper = root.parent / "build-assets/ApkMirrorInstaller302Extras.kt"
@@ -74,15 +74,27 @@ destination.write_text(helper.read_text())
 cosmetic = root.parent / "build-assets/ApkMirrorCosmeticUnlimitedV302.kt"
 assert cosmetic.exists()
 (patchdir / "CosmeticUnlimitedV302.kt").write_text(cosmetic.read_text())
+ads_privacy = root.parent / "build-assets/ApkMirrorAdsCookiesV302.kt"
+assert ads_privacy.exists()
+(patchdir / "AdsCookiesV302.kt").write_text(ads_privacy.read_text())
 
 source = main.read_text()
 needle = "    dependsOn(apkMirrorBlockPlayStoreUpdatesV302Patch)\n"
 assert source.count(needle) == 1, "Missing v4 dependencies"
 source = source.replace(needle, needle + "    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\n")
+source = main.read_text()
+needle = "    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\\n".replace("\\\\n","\\n")
+assert source.count(needle) == 1, "Missing cosmetic patch dependency"
+source = source.replace(needle, needle +
+    '    dependsOn(apkMirrorAdsManifestV302Patch)\\n'.replace('\\\\n','\\n') +
+    '    dependsOn(apkMirrorAdsCookiesV302Patch)\\n'.replace('\\\\n','\\n')
+)
+main.write_text(source)
+
 main.write_text(source)
 
 
 print("Standalone APKMirror 3.0.2 ready.")
 print("Old APKMirror 2.0.3 unlock declaration: removed.")
 print("New dependencies: Google Play installer-source spoof + Play Store update blocker.")
-print("Source metadata: APKMirror 3.0.2 Unified v6.")
+print("Source metadata: APKMirror 3.0.2 Unified v7.")
