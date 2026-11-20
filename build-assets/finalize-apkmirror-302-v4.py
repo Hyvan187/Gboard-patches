@@ -60,19 +60,29 @@ assert "APKMIRROR_INSTALLER_COMPATIBILITY" not in c
 b = metadata.read_text()
 old_name = 'name = "Doom\'s Morphe Patches"'
 assert b.count(old_name) == 1
-b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v4"')
+b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v5"')
 old_desc = 'description = "New mask, same task. All patches answer to Doom."'
 assert b.count(old_desc) == 1
 b = b.replace(old_desc,
-    'description = "Experimental APKMirror Installer 3.0.2: Ultimate, Google Play source spoof, Play Store update blocking."')
+    'description = "Experimental APKMirror Installer 3.0.2: Ultimate, install-source spoof, update blocking, cosmetic Unlimited."')
 metadata.write_text(b)
 
 helper = root.parent / "build-assets/ApkMirrorInstaller302Extras.kt"
 assert helper.exists()
 destination = patchdir / "InstallerAndUpdatesV302.kt"
 destination.write_text(helper.read_text())
+cosmetic = root.parent / "build-assets/ApkMirrorCosmeticUnlimitedV302.kt"
+assert cosmetic.exists()
+(patchdir / "CosmeticUnlimitedV302.kt").write_text(cosmetic.read_text())
+
+source = main.read_text()
+needle = "    dependsOn(apkMirrorBlockPlayStoreUpdatesV302Patch)\\n"
+assert source.count(needle) == 1, "Missing v4 dependencies"
+source = source.replace(needle, needle + "    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\\n")
+main.write_text(source)
+
 
 print("Standalone APKMirror 3.0.2 ready.")
 print("Old APKMirror 2.0.3 unlock declaration: removed.")
 print("New dependencies: Google Play installer-source spoof + Play Store update blocker.")
-print("Source metadata: APKMirror 3.0.2 Unified v4.")
+print("Source metadata: APKMirror 3.0.2 Unified v5.")
