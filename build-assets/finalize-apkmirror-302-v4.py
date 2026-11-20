@@ -79,20 +79,14 @@ assert ads_privacy.exists()
 (patchdir / "AdsCookiesV302.kt").write_text(ads_privacy.read_text())
 
 source = main.read_text()
-needle = "    dependsOn(apkMirrorBlockPlayStoreUpdatesV302Patch)\n"
-assert source.count(needle) == 1, "Missing v4 dependencies"
-source = source.replace(needle, needle + "    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\n")
-source = main.read_text()
-needle = "    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\\n".replace("\\\\n","\\n")
-assert source.count(needle) == 1, "Missing cosmetic patch dependency"
+needle = '    dependsOn(apkMirrorBlockPlayStoreUpdatesV302Patch)\n'
+assert source.count(needle) == 1, "Missing APKMirror v6 core dependencies"
 source = source.replace(needle, needle +
-    '    dependsOn(apkMirrorAdsManifestV302Patch)\\n'.replace('\\\\n','\\n') +
-    '    dependsOn(apkMirrorAdsCookiesV302Patch)\\n'.replace('\\\\n','\\n')
+    '    dependsOn(apkMirrorUnlimitedCosmeticV302Patch)\n' +
+    '    dependsOn(apkMirrorAdsManifestV302Patch)\n' +
+    '    dependsOn(apkMirrorAdsCookiesV302Patch)\n'
 )
 main.write_text(source)
-
-main.write_text(source)
-
 
 print("Standalone APKMirror 3.0.2 ready.")
 print("Old APKMirror 2.0.3 unlock declaration: removed.")
