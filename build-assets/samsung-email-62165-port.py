@@ -74,12 +74,12 @@ constant.write_text(c)
 # Distinguish this local source from bearinmind patches 2.10.0 in Morphe.
 m = meta.read_text()
 assert m.count('name = "bearinmind patches"') == 1
-m = m.replace('name = "bearinmind patches"', 'name = "Samsung Email 6.2.16.5 - Unified v4 UX"')
+m = m.replace('name = "bearinmind patches"', 'name = "Samsung Email 6.2.16.5 - Unified v5 Native Menu"')
 meta.write_text(m)
 
 p = props.read_text()
 assert p.count("version = 2.10.0") == 1
-p = p.replace("version = 2.10.0", "version = 2.10.0-samsung-email-62165-unified-v4")
+p = p.replace("version = 2.10.0", "version = 2.10.0-samsung-email-62165-unified-v5")
 props.write_text(p)
 
 print("Samsung Email target: 6.2.16.5 / 621600005")
@@ -88,4 +88,5 @@ print("Six original non-One UI functional subpatches and extension retained.")
 print("Google Play source getter shim retained as a safe no-op (no matching getters in 6.2.16.5).")
 print("Store update blocker sets manifest versionCode to 2147483647; no speculative version-code bytecode rewrites.")
 print("Static APK checks: SPR 54/54, method exists and remains private static.")
-print("UX v4: two ActionMode menus postprocessed, attachment picker footer uses Android Storage Access Framework.")
+print("UX v5: message-view Samsung ActionMode replaced with framework entries; composer selection kept.")
+print("Attachment picker: only Android ACTION_OPEN_DOCUMENT button retained; no More Apps.")
