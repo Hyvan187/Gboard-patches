@@ -32,7 +32,7 @@ assert 'val removeAdsPatch =' not in code, "Old patch still exposed"
 assert code.count("val unlockUltimateV302Patch =") == 1
 code = code.replace(
     'description = "Experimental compatibility with APKMirror Installer 3.0.2 beta; untested on-device.",',
-    'description = "Experimental APKMirror 3.0.2: Ultimate, Google Play install-source spoof and blocked Play Store updates.",',
+    'description = "APKMirror Installer 3.0.2 (Build 44): Ultimate-Funktionen, Unlimited-Anzeige, Werbe- und Tracking-Bereinigung, Cookie-Schutz, Google-Play-Installationsquelle und Schutz vor automatischen Play-Store-Updates.",',
 )
 main.write_text(code)
 
@@ -60,7 +60,7 @@ assert "APKMIRROR_INSTALLER_COMPATIBILITY" not in c
 b = metadata.read_text()
 old_name = 'name = "Doom\'s Morphe Patches"'
 assert b.count(old_name) == 1
-b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v7"')
+b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v7.1"')
 old_desc = 'description = "New mask, same task. All patches answer to Doom."'
 assert b.count(old_desc) == 1
 b = b.replace(old_desc,
@@ -91,4 +91,4 @@ main.write_text(source)
 print("Standalone APKMirror 3.0.2 ready.")
 print("Old APKMirror 2.0.3 unlock declaration: removed.")
 print("New dependencies: Google Play installer-source spoof + Play Store update blocker.")
-print("Source metadata: APKMirror 3.0.2 Unified v7.")
+print("Source metadata: APKMirror 3.0.2 Unified v7.1 (German patch description).")
