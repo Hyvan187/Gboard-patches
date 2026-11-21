@@ -62,6 +62,15 @@ main = patch.read_text()
 needle = "        samsungEmailGooglePlaySourcePatch, samsungEmailBlockStoreUpdatesPatch," + chr(10)
 assert main.count(needle) == 1, "Missing integrated store dependencies"
 main = main.replace(needle, needle + "        samsungEmailSelectionAttachmentV62165Patch," + chr(10))
+# Morphe selection dialog: short, accurate description of the single unified patch.
+old_description = 'description = "Makes Samsung Email usable on non-One UI ROMs."'
+new_description = (
+    'description = "Samsung Email 6.2.16.5 für Geräte ohne One UI: '
+    'Systemdienste, Symbole, Exchange/Kalender, Android-Textauswahl, '
+    'Dateianhänge und Schutz vor automatischen Store-Updates."'
+)
+assert main.count(old_description) == 1, "Upstream Morphe patch description changed"
+main = main.replace(old_description, new_description)
 patch.write_text(main)
 
 
@@ -74,12 +83,12 @@ constant.write_text(c)
 # Distinguish this local source from bearinmind patches 2.10.0 in Morphe.
 m = meta.read_text()
 assert m.count('name = "bearinmind patches"') == 1
-m = m.replace('name = "bearinmind patches"', 'name = "Samsung Email 6.2.16.5 - Unified v5 Native Menu"')
+m = m.replace('name = "bearinmind patches"', 'name = "Samsung Email 6.2.16.5 - Unified v5.1"')
 meta.write_text(m)
 
 p = props.read_text()
 assert p.count("version = 2.10.0") == 1
-p = p.replace("version = 2.10.0", "version = 2.10.0-samsung-email-62165-unified-v5")
+p = p.replace("version = 2.10.0", "version = 2.10.0-samsung-email-62165-unified-v5.1")
 props.write_text(p)
 
 print("Samsung Email target: 6.2.16.5 / 621600005")
@@ -90,3 +99,5 @@ print("Store update blocker sets manifest versionCode to 2147483647; no speculat
 print("Static APK checks: SPR 54/54, method exists and remains private static.")
 print("UX v5: message-view Samsung ActionMode replaced with framework entries; composer selection kept.")
 print("Attachment picker: only Android ACTION_OPEN_DOCUMENT button retained; no More Apps.")
+
+print("Morphe patch selection text: German summary of all included functions.")
