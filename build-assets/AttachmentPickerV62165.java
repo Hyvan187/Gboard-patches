@@ -51,7 +51,7 @@ public final class AttachmentPicker {
         Class<?> type = dialog.getClass();
         while (type != null) {
             for (Field field : type.getDeclaredFields()) {
-                if (field.getType() != boolean.class) continue;
+                if (field.getType() != boolean.class || !field.getName().equals("mIsAttach")) continue;
                 try {
                     field.setAccessible(true);
                     return field.getBoolean(dialog);
@@ -64,10 +64,9 @@ public final class AttachmentPicker {
         return true;
     }
 
-    private static void select(Dialog dialog, boolean systemDocuments) {
+    private static void select(Dialog dialog) {
         Context context = dialog.getContext();
-        Intent intent = new Intent(systemDocuments
-                ? Intent.ACTION_OPEN_DOCUMENT : Intent.ACTION_GET_CONTENT);
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(isAttachmentMode(dialog) ? "*/*" : "image/*");
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -114,7 +113,7 @@ public final class AttachmentPicker {
 
     /**
      * Called after AppPickerDialog.setAppPickerDialog() created its content.
-     * Adds compact platform selectors below the existing Samsung picker grid.
+     * Adds a single system file selector below the existing Samsung picker grid.
      */
     public static void install(Dialog dialog) {
         if (dialog == null) return;
@@ -137,16 +136,9 @@ public final class AttachmentPicker {
         Button documents = new Button(context);
         documents.setAllCaps(false);
         documents.setText("Dateien auswählen");
-        documents.setOnClickListener(view -> select(dialog, true));
+        documents.setOnClickListener(view -> select(dialog));
         buttons.addView(documents,
-                new LinearLayout.LayoutParams(0, dp(context, 48), 1f));
-
-        Button otherApps = new Button(context);
-        otherApps.setAllCaps(false);
-        otherApps.setText("Weitere Apps");
-        otherApps.setOnClickListener(view -> select(dialog, false));
-        buttons.addView(otherApps,
-                new LinearLayout.LayoutParams(0, dp(context, 48), 1f));
+                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 48)));
 
         if (host instanceof LinearLayout) {
             ((LinearLayout) host).addView(buttons,
