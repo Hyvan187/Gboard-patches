@@ -51,7 +51,6 @@ assert ux_patch.exists(), "Samsung Email UX patch source missing"
 
 extension_dir = root / "extensions/samsungemail/src/main/java/org/ungoogled/samsungemail"
 for source_name, dest_name in (
-    ("SelectionMenusV62165.java", "SelectionMenus.java"),
     ("AttachmentPickerV62165.java", "AttachmentPicker.java"),
 ):
     source_file = root.parent / "build-assets" / source_name
@@ -65,9 +64,13 @@ main = main.replace(needle, needle + "        samsungEmailSelectionAttachmentV62
 # Morphe selection dialog: short, accurate description of the single unified patch.
 old_description = 'description = "Makes Samsung Email usable on non-One UI ROMs."'
 new_description = (
-    'description = "Samsung Email 6.2.16.5 for non-One UI devices: '
-    'Samsung API and icon compatibility, Exchange/calendar sync, Android text '
-    'selection and document picker, and automatic store update blocking."'
+    'description = """\n'
+    'Samsung Email 6.2.16.5 (non-One UI)\n'
+    '• Samsung API, service and icon compatibility\n'
+    '• Exchange, ActiveSync and calendar fixes\n'
+    '• Android text selection and document attachments\n'
+    '• Block automatic Samsung and Play Store updates\n'
+    '""".trimIndent()'
 )
 assert main.count(old_description) == 1, "Upstream Morphe patch description changed"
 main = main.replace(old_description, new_description)
@@ -83,12 +86,12 @@ constant.write_text(c)
 # Distinguish this local source from bearinmind patches 2.10.0 in Morphe.
 m = meta.read_text()
 assert m.count('name = "bearinmind patches"') == 1
-m = m.replace('name = "bearinmind patches"', 'name = "Samsung Email 6.2.16.5 - Unified v5.2"')
+m = m.replace('name = "bearinmind patches"', 'name = "Samsung Email 6.2.16.5 - Unified v6.0"')
 meta.write_text(m)
 
 p = props.read_text()
 assert p.count("version = 2.10.0") == 1
-p = p.replace("version = 2.10.0", "version = 2.10.0-samsung-email-62165-unified-v5.2")
+p = p.replace("version = 2.10.0", "version = 2.10.0-samsung-email-62165-unified-v6.0")
 props.write_text(p)
 
 print("Samsung Email target: 6.2.16.5 / 621600005")
@@ -97,7 +100,7 @@ print("Six original non-One UI functional subpatches and extension retained.")
 print("Google Play source getter shim retained as a safe no-op (no matching getters in 6.2.16.5).")
 print("Store update blocker sets manifest versionCode to 2147483647; no speculative version-code bytecode rewrites.")
 print("Static APK checks: SPR 54/54, method exists and remains private static.")
-print("UX v5: message-view Samsung ActionMode replaced with framework entries; composer selection kept.")
+print("UX v6: forward the Android WebView ActionMode callback for reading; composer remains untouched.")
 print("Attachment picker: only Android ACTION_OPEN_DOCUMENT button retained; no More Apps.")
 
-print("Morphe patch selection text: English summary of all included functions.")
+print("Morphe patch selection text: structured multiline English feature list.")
