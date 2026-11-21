@@ -11,7 +11,7 @@ import java.util.logging.Logger
  * Preserve original ActionMode menu action IDs and rich HTML editor handlers.
  */
 internal val samsungEmailSelectionAttachmentV62165Patch = bytecodePatch(
-    description = "Makes text selection commands readable and adds Android document selection.",
+    description = "Uses native Android text selection in received mail and Android document picking.",
 ) {
     execute {
         val selectionMenus = listOf(
@@ -29,9 +29,10 @@ internal val samsungEmailSelectionAttachmentV62165Patch = bytecodePatch(
                 ?: throw PatchException("ActionMode method has no code: $type")
             val position = implementation.instructions.size - 2
             if (position < 0) throw PatchException("Unexpected ActionMode instructions: $type")
+            val methodName = if (type.contains("messageview")) "repairReceived" else "repair"
             method.addInstruction(
                 position,
-                "invoke-static { p2 }, Lorg/ungoogled/samsungemail/SelectionMenus;->repair(Landroid/view/Menu;)V",
+                "invoke-static { p2 }, Lorg/ungoogled/samsungemail/SelectionMenus;->$methodName(Landroid/view/Menu;)V",
             )
         }
 
@@ -48,7 +49,7 @@ internal val samsungEmailSelectionAttachmentV62165Patch = bytecodePatch(
             "invoke-static { p0 }, Lorg/ungoogled/samsungemail/AttachmentPicker;->install(Landroid/app/Dialog;)V",
         )
         Logger.getLogger("SamsungEmail62165UI").info(
-            "Selection action modes patched: 2; platform attachment chooser added",
+            "Received message native Android selection: 1; composer selection: 1; platform document picker retained",
         )
     }
 }
