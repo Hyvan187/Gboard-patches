@@ -33,7 +33,16 @@ assert 'val removeAdsPatch =' not in code, "Old patch still exposed"
 assert code.count("val unlockUltimateV302Patch =") == 1
 code = code.replace(
     'description = "Experimental compatibility with APKMirror Installer 3.0.2 beta; untested on-device.",',
-    'description = "APKMirror Installer 3.0.2 (build 44): Ultimate unlock, cosmetic Unlimited label, ad and tracker cleanup, ad-cookie blocking, Google Play install-source spoofing, and Play Store update blocking.",',
+    (
+        'description = """\n'
+        'APKMirror Installer 3.0.2 (build 44)\n'
+        '• Ultimate and cosmetic Unlimited features\n'
+        '• Ad, tracker and advertising-cookie cleanup\n'
+        '• Google Play installer-source spoofing\n'
+        '• Prevent automatic Play Store updates\n'
+        '• Experimental: verify behavior on your device\n'
+        '""".trimIndent(),'
+    ),
 )
 main.write_text(code)
 
@@ -61,7 +70,7 @@ assert "APKMIRROR_INSTALLER_COMPATIBILITY" not in c
 b = metadata.read_text()
 old_name = 'name = "Doom\'s Morphe Patches"'
 assert b.count(old_name) == 1
-b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v7.2"')
+b = b.replace(old_name, 'name = "APKMirror 3.0.2 Unified v7.3"')
 old_desc = 'description = "New mask, same task. All patches answer to Doom."'
 assert b.count(old_desc) == 1
 b = b.replace(old_desc,
@@ -71,7 +80,7 @@ metadata.write_text(b)
 # Isolate custom source revisions from the pinned upstream version.
 p = props.read_text()
 assert p.count("version = 1.23.1") == 1
-p = p.replace("version = 1.23.1", "version = 1.23.1-apkmirror-302-v7.2")
+p = p.replace("version = 1.23.1", "version = 1.23.1-apkmirror-302-v7.3")
 props.write_text(p)
 
 helper = root.parent / "build-assets/ApkMirrorInstaller302Extras.kt"
@@ -98,4 +107,4 @@ main.write_text(source)
 print("Standalone APKMirror 3.0.2 ready.")
 print("Old APKMirror 2.0.3 unlock declaration: removed.")
 print("New dependencies: Google Play installer-source spoof + Play Store update blocker.")
-print("Source metadata: APKMirror 3.0.2 Unified v7.2 (English patch description).")
+print("Source metadata: APKMirror 3.0.2 Unified v7.3 (English patch description).")
